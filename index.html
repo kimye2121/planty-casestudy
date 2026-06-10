@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Plan,t — 서비스 디자인 케이스 스터디</title>
+  <meta name="description" content="공간 기반 플랜테리어 서비스 Plan,t의 전략·문제 정의·정보 구조·유저 플로우와 디자인 시스템을 1920×1080 슬라이드로 정리한 케이스 스터디." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink:'#2A2E27', body:'#4A4E43', mute:'#6C705F',
+            forest:'#3A5A40', 'forest-deep':'#283D2C', 'green-mid':'#6F8565',
+            sage:'#A3B18A', 'sage-soft':'#C4CBAE',
+            paper:'#FAF9F5', 'paper-2':'#F2EFE8', strong:'#E8E3D6',
+            hairline:'#E1DCCE', 'border-strong':'#B7B5A4',
+            error:'#C13515', tint:'#E8EDE1',
+          },
+          fontFamily: { sans: ['Inter','Pretendard','-apple-system','system-ui','sans-serif'] },
+          boxShadow: {
+            soft: 'rgba(40,61,44,0.03) 0 0 0 1px, rgba(40,61,44,0.05) 0 2px 6px 0, rgba(40,61,44,0.10) 0 4px 8px 0',
+            lift: 'rgba(40,61,44,0.05) 0 0 0 1px, rgba(40,61,44,0.09) 0 6px 16px 0, rgba(40,61,44,0.13) 0 12px 28px 0',
+          },
+          letterSpacing: { editorial:'0.16em' },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    :root{
+      --ink:#2A2E27; --body:#4A4E43; --mute:#6C705F;
+      --forest:#3A5A40; --forest-deep:#283D2C; --green-mid:#6F8565;
+      --sage:#A3B18A; --sage-soft:#C4CBAE;
+      --paper:#FAF9F5; --paper-2:#F2EFE8; --hairline:#E1DCCE; --border-strong:#B7B5A4;
+      --rausch:#3A5A40;
+      --shadow-soft:rgba(40,61,44,0.03) 0 0 0 1px, rgba(40,61,44,0.05) 0 2px 6px 0, rgba(40,61,44,0.10) 0 4px 8px 0;
+      --shadow-lift:rgba(40,61,44,0.05) 0 0 0 1px, rgba(40,61,44,0.09) 0 6px 16px 0, rgba(40,61,44,0.13) 0 12px 28px 0;
+      --ease: cubic-bezier(0.16,1,0.3,1);
+    }
+    html,body{ height:100%; margin:0; background:var(--paper); }
+    body{
+      font-family:'Inter','Pretendard',-apple-system,system-ui,sans-serif;
+      color:var(--ink); letter-spacing:-0.01em; word-break:keep-all; -webkit-font-smoothing:antialiased; overflow:hidden;
+    }
+    .keep{ word-break:keep-all; }
+
+    /* ===== Brand symbol (잎 2장 + 줄기) ===== */
+    .symbol{ position:relative; display:inline-block; width:1em; height:1em; flex:none; }
+    .symbol .stem{ position:absolute; left:50%; bottom:.04em; width:.07em; height:.5em; background:var(--forest); transform:translateX(-50%); border-radius:.04em; }
+    .symbol .lf{ position:absolute; width:.5em; height:.5em; }
+    .symbol .lf-r{ top:.06em; right:.04em; background:var(--forest); border-radius:100% .1em 100% .1em; transform:rotate(-6deg); }
+    .symbol .lf-l{ top:.28em; left:.05em; width:.42em; height:.42em; background:var(--sage); border-radius:.1em 100% .1em 100%; transform:rotate(6deg); }
+    .symbol.rev .lf-r{ background:var(--sage-soft); } .symbol.rev .lf-l{ background:var(--paper); } .symbol.rev .stem{ background:var(--sage); }
+    .symbol.sage .lf-r,.symbol.sage .lf-l,.symbol.sage .stem{ background:var(--forest-deep); }
+    .wm-comma{ color:var(--green-mid); font-weight:800; }
+
+    /* ===== Deck : 각 슬라이드 = 1920×1080 한 화면 ===== */
+    .deck{ height:100vh; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth; }
+    .deck::-webkit-scrollbar{ width:0; }
+    /* 슬라이드 = 뷰포트 전체(배경색이 양옆·위아래 끝까지 채움). 내부 .stage가 1920×1080 캔버스를 비율 유지로 축소 */
+    .slide{ width:100vw; height:100vh; flex:none; scroll-snap-align:center; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+    .stage{ width:1920px; height:1080px; zoom:var(--fit,1); position:relative; display:flex; flex-direction:column; justify-content:center; overflow:hidden; }
+    .wrap{ width:100%; max-width:1714px; margin:0 auto; padding:0 60px; zoom:1.12; }
+
+    .shead{ display:flex; align-items:center; gap:16px; margin-bottom:34px; }
+    .shead .no{ font-size:13px; font-weight:700; letter-spacing:.16em; }
+    .shead .ln{ height:1px; flex:1; }
+    .shead .lb{ font-size:12px; letter-spacing:.16em; text-transform:uppercase; font-weight:600; }
+    .eyebrow{ font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--mute); font-weight:600; }
+    .panel{ background:#fff; border:1px solid var(--hairline); border-radius:1rem; }
+    .chip-static{ display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:6px 12px; border-radius:999px; background:#fff; border:1px solid var(--hairline); color:var(--body); }
+    /* 반응형 데모: 가로 폭을 직접 드래그하는 브라우저 프레임 */
+    .rzwrap{ position:relative; width:88%; max-width:100%; min-width:340px; border:1px solid var(--hairline); border-radius:14px; overflow:hidden; box-shadow:var(--shadow-lift); background:#fff; margin:0 auto; }
+    .rzbar{ height:36px; display:flex; align-items:center; gap:6px; padding:0 14px; background:var(--paper-2); border-bottom:1px solid var(--hairline); }
+    .rzbar .url{ font-size:11px; color:var(--mute); background:#fff; border:1px solid var(--hairline); border-radius:6px; padding:2px 10px; }
+    .rzbar .rzw{ margin-left:auto; margin-right:20px; font-size:12px; font-weight:700; color:var(--forest); font-variant-numeric:tabular-nums; }
+    .rzframe{ width:100%; height:436px; border:0; background:#fff; display:block; }
+    .rzhandle{ position:absolute; top:0; right:0; width:16px; height:100%; cursor:ew-resize; z-index:6; display:flex; align-items:center; justify-content:center; background:linear-gradient(90deg,transparent,rgba(40,61,44,.06)); }
+    .rzhandle::before{ content:''; width:4px; height:48px; border-radius:999px; background:var(--border-strong); transition:background .15s; }
+    .rzhandle:hover::before{ background:var(--rausch); }
+    .rzshield{ position:fixed; inset:0; z-index:90; cursor:ew-resize; display:none; }
+    .rzshield.on{ display:block; }
+    /* IA 다이어그램 */
+    .ia-root{ display:inline-flex; align-items:center; gap:9px; background:var(--forest); color:#fff; font-weight:700; font-size:16px; padding:11px 20px; border-radius:12px; box-shadow:var(--shadow-soft); }
+    .ia-trunk{ width:2px; height:24px; background:var(--hairline); margin:0 auto; }
+    .ia-busrow{ position:relative; height:22px; }
+    .ia-busrow .bus{ position:absolute; top:0; left:10%; right:10%; height:2px; background:var(--hairline); }
+    .ia-busrow .tick{ position:absolute; top:0; width:2px; height:22px; background:var(--hairline); transform:translateX(-1px); }
+    .ia-head{ display:flex; align-items:center; gap:8px; padding:11px 15px; border-radius:12px 12px 0 0; font-weight:700; color:#fff; font-size:16px; }
+    .ia-col .body{ border:1px solid var(--hairline); border-top:none; border-radius:0 0 12px 12px; background:#fff; padding:10px; }
+    .ia-node{ display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:9px; background:var(--paper-2); font-size:14px; color:var(--ink); font-weight:500; }
+    .ia-node + .ia-node{ margin-top:7px; }
+    .ia-node .d{ margin-left:auto; font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; }
+    .ia-num{ width:18px; height:18px; flex:none; border-radius:999px; background:var(--forest); color:#fff; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+    .ia-arrow{ display:flex; justify-content:center; color:var(--border-strong); margin:2px 0; }
+    .swatch{ aspect-ratio:1/1; border-radius:12px; box-shadow:inset 0 0 0 1px rgba(40,61,44,.08); }
+
+    /* reveal on active slide */
+    [data-r]{ opacity:0; transform:translateY(18px); transition:opacity .7s var(--ease), transform .7s var(--ease); }
+    .slide.active [data-r]{ opacity:1; transform:none; }
+    .slide.active [data-r][data-d="1"]{ transition-delay:.08s }
+    .slide.active [data-r][data-d="2"]{ transition-delay:.16s }
+    .slide.active [data-r][data-d="3"]{ transition-delay:.24s }
+
+    /* fixed chrome */
+    .brandbar{ position:fixed; top:24px; left:36px; z-index:60; display:inline-flex; align-items:center; gap:9px; font-weight:700; font-size:20px; }
+    .counter{ position:fixed; top:26px; right:40px; z-index:60; font-size:13px; font-weight:600; letter-spacing:.12em; color:var(--mute); font-variant-numeric:tabular-nums; }
+    .counter b{ color:var(--ink); }
+    .dots{ position:fixed; right:30px; top:50%; transform:translateY(-50%); z-index:60; display:flex; flex-direction:column; gap:10px; }
+    .dots button{ width:9px; height:9px; border-radius:999px; border:none; background:var(--border-strong); cursor:pointer; padding:0; transition:.2s; }
+    .dots button.on{ background:var(--forest); height:22px; }
+    .dots.on-dark button{ background:rgba(255,255,255,.35); } .dots.on-dark button.on{ background:#fff; }
+    .scrollhint{ position:absolute; bottom:34px; left:50%; transform:translateX(-50%); color:var(--mute); font-size:12px; letter-spacing:.16em; text-transform:uppercase; display:flex; flex-direction:column; align-items:center; gap:6px; }
+    @keyframes bob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(6px) } }
+    .scrollhint iconify-icon{ animation:bob 1.8s infinite; }
+  </style>
+</head>
+<body>
+  <!-- fixed chrome -->
+  <a class="brandbar" href="#s0" id="brandbar" style="color:var(--ink)">
+    <span class="symbol" id="brandSym" style="font-size:22px;"><span class="lf lf-r"></span><span class="lf lf-l"></span><span class="stem"></span></span>
+    <span id="brandWM"><span>Plan</span><span class="wm-comma">,</span><span>t</span></span>
+  </a>
+  <div class="counter"><b id="cNow">01</b> / 14</div>
+  <div class="dots" id="dots"></div>
+  <div class="rzshield" id="rzshield" aria-hidden="true"></div>
+
+  <div class="deck" id="deck">
+
+    <!-- ============ 00 COVER ============ -->
+    <section class="slide" id="s0" data-title="Cover">
+      <div class="stage">
+      <div class="wrap relative">
+        <p data-r class="eyebrow mb-6">UX · Service Design Case Study</p>
+        <h1 data-r data-d="1" class="font-extrabold tracking-tight text-ink keep" style="font-size:clamp(40px,5.4vw,82px); line-height:1.04;">
+          공간을 중심으로<br/>
+          <span class="text-forest">식물 선택부터 배치까지</span><br/>
+          하나의 흐름으로.
+        </h1>
+        <p data-r data-d="2" class="mt-7 max-w-2xl text-body leading-relaxed keep" style="font-size:19px;">
+          <b class="text-ink">Plan,t</b> — 우리 집 환경과 생활 조건에 맞는 식물을 추천하고,
+          그 식물을 공간 사진 위에 직접 올려 보며 플랜테리어(식물로 집 꾸미기)를 계획하는 공간 기반 서비스.
+        </p>
+        <div data-r data-d="3" class="mt-9 flex flex-wrap gap-3">
+          <span class="chip-static"><iconify-icon icon="solar:home-smile-bold-duotone" width="16" class="text-forest"></iconify-icon> 공간 기반 추천</span>
+          <span class="chip-static"><iconify-icon icon="solar:shield-check-bold-duotone" width="16" class="text-forest"></iconify-icon> 반려동물 안전 필수 필터</span>
+          <span class="chip-static"><iconify-icon icon="solar:gallery-wide-bold-duotone" width="16" class="text-forest"></iconify-icon> 2D 사진 배치 시뮬레이션</span>
+        </div>
+      </div>
+      <div class="scrollhint"><span>SCROLL</span><iconify-icon icon="solar:alt-arrow-down-bold-duotone" width="20"></iconify-icon></div>
+    </div>
+    </section>
+
+    <!-- ============ 01 SERVICE 오버뷰 ============ -->
+    <section class="slide" id="s1" data-title="Service Overview">
+      <div class="stage">
+      <div class="wrap">
+        <div class="grid grid-cols-12 gap-12 items-center">
+          <div class="col-span-5">
+            <h2 data-r class="text-4xl font-bold tracking-tight text-ink leading-tight keep">무슨 서비스인가요?</h2>
+            <p data-r data-d="1" class="mt-5 text-body leading-relaxed keep">기존 식물 추천이 식물 자체에 집중했다면, Plan,t는 <b class="text-ink">공간을 중심에 두고</b> 식물 고르기부터 배치까지를 한 흐름으로 잇습니다.</p>
+            <div data-r data-d="2" class="mt-7 rounded-2xl p-5 bg-tint border border-sage-soft/60">
+              <p class="eyebrow text-forest mb-2">핵심 한 문장</p>
+              <p class="text-lg font-semibold text-forest-deep leading-snug keep">사용자는 식물을 <span class="underline decoration-sage decoration-2 underline-offset-4">찾고</span> 싶은 게 아니라, 실패 없이 플랜테리어를 <span class="underline decoration-sage decoration-2 underline-offset-4">완성</span>하고 싶다.</p>
+            </div>
+          </div>
+          <div class="col-span-7">
+            <p data-r class="eyebrow mb-4">이 서비스가 주는 가치</p>
+            <div class="grid grid-cols-2 gap-4">
+              <article data-r class="panel p-6"><div class="w-11 h-11 rounded-xl bg-tint flex items-center justify-center mb-3"><iconify-icon icon="solar:home-angle-2-bold-duotone" width="24" class="text-forest"></iconify-icon></div><p class="eyebrow">기능적 가치</p><h3 class="font-bold text-ink mt-1">공간·생활 조건 기반 추천</h3><p class="text-sm text-body mt-1 keep">반려동물 안전성은 필수 조건</p></article>
+              <article data-r data-d="1" class="panel p-6"><div class="w-11 h-11 rounded-xl bg-tint flex items-center justify-center mb-3"><iconify-icon icon="solar:heart-bold-duotone" width="24" class="text-forest"></iconify-icon></div><p class="eyebrow">정서적 가치</p><h3 class="font-bold text-ink mt-1">선택 실패 불안 감소</h3><p class="text-sm text-body mt-1 keep">"우리 집에서 살 수 있을까" 해소</p></article>
+              <article data-r data-d="2" class="panel p-6"><div class="w-11 h-11 rounded-xl bg-tint flex items-center justify-center mb-3"><iconify-icon icon="solar:gallery-wide-bold-duotone" width="24" class="text-forest"></iconify-icon></div><p class="eyebrow">경험 가치</p><h3 class="font-bold text-ink mt-1">구매 전 미리 체험</h3><p class="text-sm text-body mt-1 keep">내 공간 사진 위에서 배치</p></article>
+              <article data-r data-d="3" class="panel p-6"><div class="w-11 h-11 rounded-xl bg-tint flex items-center justify-center mb-3"><iconify-icon icon="solar:link-circle-bold-duotone" width="24" class="text-forest"></iconify-icon></div><p class="eyebrow">차별점</p><h3 class="font-bold text-ink mt-1">추천 → 배치 통합 흐름</h3><p class="text-sm text-body mt-1 keep">추천과 시뮬레이션을 한 흐름으로</p></article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 02 시장 배경 ============ -->
+    <section class="slide" id="s2" data-title="Market">
+      <div class="stage">
+      <div class="wrap">
+        <h2 data-r class="text-4xl font-bold tracking-tight text-ink leading-tight keep mb-5">시장 배경과 사용자 인사이트</h2>
+        <div class="grid grid-cols-12 gap-8 mb-6">
+          <div class="col-span-5">
+            <p data-r class="eyebrow mb-3">시장 기회</p>
+            <ul class="space-y-2.5">
+              <li data-r class="panel p-4 flex items-start gap-3"><iconify-icon icon="solar:home-smile-bold-duotone" width="22" class="text-forest flex-none mt-0.5"></iconify-icon><div><p class="font-bold text-ink text-sm keep">플랜테리어 시장 성장</p><p class="text-sm text-body keep">1·2인 가구 증가와 홈스타일링 문화 확산</p></div></li>
+              <li data-r data-d="1" class="panel p-4 flex items-start gap-3"><iconify-icon icon="solar:leaf-bold-duotone" width="22" class="text-forest flex-none mt-0.5"></iconify-icon><div><p class="font-bold text-ink text-sm keep">반려식물 문화</p><p class="text-sm text-body keep">장식품이 아니라 함께 사는 존재로</p></div></li>
+              <li data-r data-d="2" class="panel p-4 flex items-start gap-3"><iconify-icon icon="solar:cat-bold-duotone" width="22" class="text-forest flex-none mt-0.5"></iconify-icon><div><p class="font-bold text-ink text-sm keep">펫테리어 수요</p><p class="text-sm text-body keep">반려동물 안전을 고려한 환경 설계에 대한 관심</p></div></li>
+              <li data-r data-d="3" class="panel p-4 flex items-start gap-3"><iconify-icon icon="solar:eye-scan-bold-duotone" width="22" class="text-forest flex-none mt-0.5"></iconify-icon><div><p class="font-bold text-ink text-sm keep">시뮬레이션 소비</p><p class="text-sm text-body keep">구매 전에 미리 보고 결정하는 소비 흐름</p></div></li>
+            </ul>
+          </div>
+          <div class="col-span-7">
+            <p data-r class="eyebrow mb-3">경쟁 분석 · 차별화</p>
+            <div data-r data-d="1" class="panel overflow-hidden">
+              <table class="w-full text-sm">
+                <thead><tr class="text-left text-mute bg-paper-2">
+                  <th class="font-semibold p-3">기능</th><th class="font-semibold p-3 text-center">오늘의집</th><th class="font-semibold p-3 text-center">Plant</th><th class="font-semibold p-3 text-center">PictureThis</th><th class="font-semibold p-3 text-center bg-tint text-forest">Plan,t</th>
+                </tr></thead>
+                <tbody class="text-body">
+                  <tr class="border-t border-hairline"><td class="p-3 font-medium text-ink keep">공간 환경 기반 식물 추천</td><td class="p-3 text-center text-border-strong">✕</td><td class="p-3 text-center text-mute">△</td><td class="p-3 text-center text-border-strong">✕</td><td class="p-3 text-center bg-tint/60 font-bold text-forest">✓</td></tr>
+                  <tr class="border-t border-hairline"><td class="p-3 font-medium text-ink keep">배치 시뮬레이션 (식물)</td><td class="p-3 text-center text-mute">✓</td><td class="p-3 text-center text-border-strong">✕</td><td class="p-3 text-center text-border-strong">✕</td><td class="p-3 text-center bg-tint/60 font-bold text-forest">✓</td></tr>
+                  <tr class="border-t border-hairline"><td class="p-3 font-medium text-ink keep">반려동물 안전 필터 (필수 조건)</td><td class="p-3 text-center text-border-strong">✕</td><td class="p-3 text-center text-border-strong">✕</td><td class="p-3 text-center text-mute">△</td><td class="p-3 text-center bg-tint/60 font-bold text-forest">✓</td></tr>
+                  <tr class="border-t border-hairline"><td class="p-3 font-medium text-ink keep">추천 → 배치 통합 흐름</td><td class="p-3 text-center text-border-strong">✕</td><td class="p-3 text-center text-border-strong">✕</td><td class="p-3 text-center text-border-strong">✕</td><td class="p-3 text-center bg-tint/60 font-bold text-forest">✓</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div data-r data-d="2">
+          <div class="flex items-end justify-between gap-4 mb-2.5">
+            <p class="eyebrow text-forest">사용자 인사이트</p>
+            <span class="text-xs text-mute keep">출처 · 트렌드모니터 「반려식물 관련 인식 조사」, 엠브레인 트렌드모니터 2025</span>
+          </div>
+          <p class="text-body keep mb-3 max-w-5xl">식물 가꾸기는 이제 취미를 넘어, 공간을 꾸미고 마음을 다독이는 일상이 됐다. 사용자는 식물을 사는 게 아니라 <b class="text-ink">더 나은 공간과 정서적 만족</b>을 기대한다.</p>
+          <div class="grid grid-cols-4 gap-4">
+            <div class="panel p-4"><p class="text-3xl font-extrabold text-forest leading-none">44.1<span class="text-xl">%</span></p><p class="text-sm text-body mt-2 keep">현재 집에서 식물을 키움 (경험자 85%+)</p></div>
+            <div class="panel p-4"><p class="text-3xl font-extrabold text-forest leading-none">58.3<span class="text-xl">%</span></p><p class="text-sm text-body mt-2 keep">공기정화 — 식물을 키우는 가장 큰 이유</p></div>
+            <div class="panel p-4"><p class="text-3xl font-extrabold text-forest leading-none">36.6<span class="text-xl">%</span></p><p class="text-sm text-body mt-2 keep">인테리어 목적 (식물 자체 관심 38.6%)</p></div>
+            <div class="panel p-4"><p class="text-3xl font-extrabold text-forest leading-none">44.0<span class="text-xl">%</span></p><p class="text-sm text-body mt-2 keep">"집안 분위기가 밝아졌다" — 기쁨 43.8% · 힐링 38.4%</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 03 사용자 리서치 ============ -->
+    <section class="slide" id="s3" data-title="Research">
+      <div class="stage">
+      <div class="wrap">
+        <div class="grid grid-cols-12 gap-12">
+          <div class="col-span-5">
+            <div data-r class="panel p-7">
+              <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-2xl bg-tint flex items-center justify-center"><iconify-icon icon="solar:user-rounded-bold-duotone" width="34" class="text-forest"></iconify-icon></div>
+                <div><p class="eyebrow">대표 사용자 · Persona</p><h3 class="text-xl font-bold text-ink">김소연 · 29</h3><p class="text-sm text-mute keep">직장인 · 1인 가구 · 반려묘 1마리</p></div>
+              </div>
+              <dl class="mt-5 space-y-2.5 text-sm">
+                <div><dt class="eyebrow">Goal</dt><dd class="text-body keep mt-0.5">집을 더 따뜻하고 분위기 있는 공간으로</dd></div>
+                <div><dt class="eyebrow">고민</dt><dd class="text-body keep mt-0.5">선택 어려움 · 관리 자신감 부족 · 반려묘 안전</dd></div>
+                <div><dt class="eyebrow">Success</dt><dd class="text-body keep mt-0.5">식물을 죽이지 않고 어울리는 공간 완성</dd></div>
+              </dl>
+              <blockquote class="mt-5 pt-4 border-t border-hairline text-forest-deep font-semibold leading-snug keep text-[15px]">"예쁜 식물은 많은데, 우리 집에서 살 수 있을지 — 그리고 고양이한테 안전한지를 모르겠어요."</blockquote>
+            </div>
+          </div>
+          <div class="col-span-7">
+            <h2 data-r class="text-4xl font-bold tracking-tight text-ink leading-tight keep">사용자가 겪는 핵심 어려움</h2>
+            <p data-r data-d="1" class="mt-3 text-body keep">조사에서 드러난 <b class="text-ink">진입장벽</b>이 아래 5가지 어려움(Pain Point)으로 이어지고, 각 어려움은 그것을 푸는 기능과 바로 연결됩니다.</p>
+            <div data-r data-d="1" class="flex flex-wrap gap-2 mt-3">
+              <span class="chip-static"><span class="w-1.5 h-1.5 rounded-full bg-forest flex-none"></span> 관리가 귀찮을 것 같다 <b class="text-ink ml-0.5">44.0%</b></span>
+              <span class="chip-static"><span class="w-1.5 h-1.5 rounded-full bg-forest flex-none"></span> 공간만 차지할 것 같다 <b class="text-ink ml-0.5">40.0%</b></span>
+              <span class="chip-static"><span class="w-1.5 h-1.5 rounded-full bg-forest flex-none"></span> 얼마 쓰지 않을 것 같다 <b class="text-ink ml-0.5">38.1%</b></span>
+            </div>
+            <ul class="mt-4 space-y-2.5">
+              <li data-r class="flex items-center gap-4 panel p-4"><span class="text-xs font-bold text-forest bg-tint rounded-lg px-2.5 py-1 flex-none">P1</span><p class="text-body keep text-sm"><b class="text-ink">우리 집 환경에 맞는 식물을 알기 어렵다.</b> <span class="text-mute">→ 공간 기반 추천</span></p></li>
+              <li data-r data-d="1" class="flex items-center gap-4 panel p-4"><span class="text-xs font-bold text-forest bg-tint rounded-lg px-2.5 py-1 flex-none">P2</span><p class="text-body keep text-sm"><b class="text-ink">관리 실패가 두렵다.</b> <span class="text-mute">→ 난이도 맞춤 추천</span></p></li>
+              <li data-r data-d="2" class="flex items-center gap-4 panel p-4"><span class="text-xs font-bold text-forest bg-tint rounded-lg px-2.5 py-1 flex-none">P3</span><p class="text-body keep text-sm"><b class="text-ink">반려동물에게 위험한 식물을 구분하기 어렵다.</b> <span class="text-mute">→ 안전 필터(필수)</span></p></li>
+              <li data-r data-d="2" class="flex items-center gap-4 panel p-4"><span class="text-xs font-bold text-forest bg-tint rounded-lg px-2.5 py-1 flex-none">P4</span><p class="text-body keep text-sm"><b class="text-ink">배치한 모습을 상상하기 어렵다.</b> <span class="text-mute">→ 배치 시뮬레이션</span></p></li>
+              <li data-r data-d="3" class="flex items-center gap-4 panel p-4"><span class="text-xs font-bold text-forest bg-tint rounded-lg px-2.5 py-1 flex-none">P5</span><p class="text-body keep text-sm"><b class="text-ink">구매 전 확신을 얻기 어렵다.</b> <span class="text-mute">→ 통합 추천·배치 플로우</span></p></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 04 KEY INSIGHT ============ -->
+    <section class="slide bg-forest" id="s4" data-title="Key Insight" data-dark>
+      <div class="stage">
+      <iconify-icon icon="solar:leaf-bold-duotone" width="340" class="absolute -right-16 -bottom-16 text-white/5"></iconify-icon>
+      <div class="wrap relative text-paper">
+        <p data-r class="eyebrow text-sage-soft mb-6">우리가 발견한 단 하나의 사실</p>
+        <blockquote data-r data-d="1" class="font-extrabold tracking-tight keep" style="font-size:clamp(34px,4.6vw,68px); line-height:1.12;">
+          사용자는 식물을 <span class="text-sage-soft">찾고</span> 싶은 게 아니라,<br/>실패 없이 플랜테리어를 <span class="text-sage-soft">완성</span>하고 싶다.
+        </blockquote>
+        <div data-r data-d="2" class="mt-12 grid grid-cols-2 gap-5">
+          <div class="rounded-2xl bg-forest-deep/60 ring-1 ring-white/10 p-6"><p class="eyebrow text-sage-soft mb-2">지금까지 (AS-IS)</p><p class="text-paper/85 leading-relaxed keep">콘텐츠 발견 → 식물 탐색 → 적합성 고민 → 난이도 고민 → <b class="text-white">구매 보류·포기</b></p></div>
+          <div class="rounded-2xl bg-sage/20 ring-1 ring-sage-soft/30 p-6"><p class="eyebrow text-sage-soft mb-2">Plan,t를 쓰면 (TO-BE)</p><p class="text-paper/90 leading-relaxed keep">공간 진단 → 추천(사유 카드) → 상세 → 배치 → <b class="text-white">확신 있는 결정</b></p></div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 05 PROBLEM ============ -->
+    <section class="slide" id="s5" data-title="Problem">
+      <div class="stage">
+      <div class="wrap">
+        <div class="grid grid-cols-12 gap-12 items-center">
+          <div class="col-span-5">
+            <h2 data-r class="text-4xl font-bold tracking-tight text-ink leading-tight keep">문제 정의</h2>
+            <div data-r data-d="1" class="mt-6 panel p-7 border-l-[3px]" style="border-left-color:var(--forest)">
+              <p class="eyebrow mb-3">Problem Statement</p>
+              <p class="text-lg text-ink leading-relaxed keep">플랜테리어에 관심 있는 사용자는 적합한 식물을 고르고 싶어하지만, <b class="text-forest">공간 적합성·안전성·관리 난이도</b>를 판단하기 어려워 구매와 계획에 어려움을 겪는다.</p>
+            </div>
+          </div>
+          <div class="col-span-7">
+            <p data-r class="eyebrow mb-4">우리가 어떻게 하면? · How Might We</p>
+            <div class="grid grid-cols-2 gap-4">
+              <div data-r class="panel p-6"><span class="text-2xl font-extrabold text-sage">01</span><p class="mt-2 text-body keep">공간에 맞는 식물을 <b class="text-ink">쉽게 찾도록</b> 도울 수 있을까?</p></div>
+              <div data-r data-d="1" class="panel p-6"><span class="text-2xl font-extrabold text-sage">02</span><p class="mt-2 text-body keep">구매 전에 <b class="text-ink">공간 변화를 미리 경험</b>하게 할 수 있을까?</p></div>
+              <div data-r data-d="2" class="panel p-6"><span class="text-2xl font-extrabold text-sage">03</span><p class="mt-2 text-body keep">선택 실패에 대한 <b class="text-ink">불안을 줄일</b> 수 있을까?</p></div>
+              <div data-r data-d="3" class="panel p-6"><span class="text-2xl font-extrabold text-sage">04</span><p class="mt-2 text-body keep">반려동물과 사는 사용자가 <b class="text-ink">안전하게 선택</b>하게 도울 수 있을까?</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 06 정보 구조 IA ============ -->
+    <section class="slide" id="s6" data-title="IA">
+      <div class="stage">
+      <div class="wrap">
+        <h2 data-r class="text-3xl font-bold tracking-tight text-ink leading-tight keep mb-1">앱 구조 한눈에 — 메뉴 3개 + 어디서나 뜨는 창</h2>
+        <p data-r class="text-sm text-body keep mb-5">맨 위 메뉴는 <b class="text-ink">홈 · 식물 추천 · 찜·시안</b> 3개예요. 공간 등록과 배치는 따로 있는 메뉴가 아니라, <b class="text-forest">'식물 추천' 과정과 화면 위에 뜨는 창(오버레이)</b>으로 이뤄집니다.</p>
+
+        <!-- 루트 → 3영역 커넥터 -->
+        <div data-r data-d="1" class="text-center">
+          <span class="ia-root"><span class="symbol rev" style="font-size:18px;"><span class="lf lf-r"></span><span class="lf lf-l"></span><span class="stem"></span></span> Plan,t · 맨 위 메뉴</span>
+        </div>
+        <div data-r data-d="1" class="ia-trunk"></div>
+        <div data-r data-d="1" class="ia-busrow">
+          <div class="bus"></div>
+          <div class="tick" style="left:16.6%"></div>
+          <div class="tick" style="left:50%"></div>
+          <div class="tick" style="left:83.3%"></div>
+        </div>
+
+        <!-- 3영역 -->
+        <div data-r data-d="2" class="grid grid-cols-3 gap-5 items-start">
+          <!-- 홈 -->
+          <div class="ia-col">
+            <div class="ia-head" style="background:var(--green-mid)"><iconify-icon icon="solar:home-2-bold-duotone" width="20"></iconify-icon> 홈 <span class="ml-auto text-[11px] font-semibold opacity-80">Discovery</span></div>
+            <div class="body">
+              <div class="ia-node">무드보드 홈 <span class="d" style="background:#E8EDE1;color:var(--forest)">진입</span></div>
+              <div class="ia-node">서비스 소개</div>
+              <div class="ia-node">이용 가이드 · 등록→추천→찜·시안</div>
+              <div class="ia-node">내 공간 바로가기</div>
+            </div>
+          </div>
+          <!-- 식물 추천 (순차 흐름) -->
+          <div class="ia-col">
+            <div class="ia-head" style="background:var(--forest)"><iconify-icon icon="solar:magic-stick-3-bold-duotone" width="20"></iconify-icon> 식물 추천 <span class="ml-auto text-[11px] font-semibold opacity-80">순차 흐름</span></div>
+            <div class="body">
+              <div class="ia-node"><span class="ia-num">1</span> 추천 허브 · 내 공간 · 상황별·계절 추천 <span class="d" style="background:#E8EDE1;color:var(--forest)">1차</span></div>
+              <div class="ia-arrow"><iconify-icon icon="solar:alt-arrow-down-bold" width="13"></iconify-icon></div>
+              <div class="ia-node"><span class="ia-num">2</span> 공간 등록 · 사진 <span class="d" style="background:#C4CBAE;color:var(--forest-deep)">1/2</span></div>
+              <div class="ia-arrow"><iconify-icon icon="solar:alt-arrow-down-bold" width="13"></iconify-icon></div>
+              <div class="ia-node"><span class="ia-num">3</span> 우리 집 이야기 · 조건 <span class="d" style="background:#C4CBAE;color:var(--forest-deep)">2/2</span></div>
+              <div class="ia-arrow"><iconify-icon icon="solar:alt-arrow-down-bold" width="13"></iconify-icon></div>
+              <div class="ia-node"><span class="ia-num">4</span> 분석</div>
+              <div class="ia-arrow"><iconify-icon icon="solar:alt-arrow-down-bold" width="13"></iconify-icon></div>
+              <div class="ia-node"><span class="ia-num">5</span> 이 공간 추천 식물 · 필터</div>
+            </div>
+          </div>
+          <!-- 찜·시안 -->
+          <div class="ia-col">
+            <div class="ia-head" style="background:var(--green-mid)"><iconify-icon icon="solar:bookmark-bold-duotone" width="20"></iconify-icon> 찜·시안 <span class="ml-auto text-[11px] font-semibold opacity-80">Collection</span></div>
+            <div class="body">
+              <div class="ia-node">찜한 식물 <span class="d" style="background:#E8EDE1;color:var(--forest)">탭</span></div>
+              <div class="ia-node">저장 시안 <span class="d" style="background:#E8EDE1;color:var(--forest)">탭</span></div>
+              <div class="ia-node">시안 비교</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 전역 오버레이 -->
+        <div data-r data-d="3" class="mt-5 rounded-2xl bg-tint border border-sage-soft/60 p-4">
+          <div class="flex items-center gap-2 mb-2.5">
+            <iconify-icon icon="solar:square-top-down-bold-duotone" width="18" class="text-forest"></iconify-icon>
+            <p class="eyebrow text-forest">전역 오버레이 · Overlay</p>
+            <span class="text-xs text-mute keep">— 어느 화면에서든 호출, 화면 전환 없이 흐름 유지</span>
+          </div>
+          <div class="flex flex-wrap gap-2.5">
+            <span class="chip-static"><iconify-icon icon="solar:document-text-bold-duotone" width="15" class="text-forest"></iconify-icon> 식물 상세 · 안전·관리 가이드</span>
+            <span class="chip-static"><iconify-icon icon="solar:gallery-wide-bold-duotone" width="15" class="text-forest"></iconify-icon> 배치할 공간 선택</span>
+            <span class="chip-static"><iconify-icon icon="solar:add-circle-bold-duotone" width="15" class="text-forest"></iconify-icon> 식물 추가 (배치)</span>
+            <span class="chip-static"><iconify-icon icon="solar:pen-new-square-bold-duotone" width="15" class="text-forest"></iconify-icon> 배치 편집 → 시안 저장 · 이미지 다운로드</span>
+            <span class="chip-static"><iconify-icon icon="solar:widget-2-bold-duotone" width="15" class="text-forest"></iconify-icon> 추천 더보기 · Curated</span>
+            <span class="chip-static"><iconify-icon icon="solar:scale-bold-duotone" width="15" class="text-forest"></iconify-icon> 시안 비교</span>
+          </div>
+        </div>
+
+        <!-- 전역 규칙 (compact) -->
+        <div data-r data-d="3" class="mt-4 grid grid-cols-2 gap-5">
+          <div class="flex items-start gap-2.5 text-sm text-body keep"><iconify-icon icon="solar:gallery-add-bold-duotone" width="20" class="text-forest flex-none"></iconify-icon> 공간 등록 사진은 1회 등록 → 추천·배치에 공통 재사용</div>
+          <div class="flex items-start gap-2.5 text-sm text-body keep"><iconify-icon icon="solar:shield-check-bold-duotone" width="20" class="text-forest flex-none"></iconify-icon> 추천 결과에 펫 세이프·저광·관리 쉬움·공기 정화 필터 상시 제공</div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 07 USER FLOW ============ -->
+    <section class="slide" id="s7" data-title="User Flow">
+      <div class="stage">
+      <div class="wrap">
+        <h2 data-r class="text-4xl font-bold tracking-tight text-ink leading-tight keep mb-8">홈에서 시안 저장까지, 실제 서비스의 한 흐름</h2>
+        <ol data-r data-d="1" class="grid grid-cols-8 gap-2.5 mb-7">
+          <li class="panel p-3 flex flex-col"><span class="eyebrow">01</span><iconify-icon icon="solar:home-2-bold-duotone" width="26" class="text-forest my-2"></iconify-icon><h3 class="font-bold text-ink text-sm keep">홈</h3><p class="text-[11px] text-mute mt-0.5 keep">무드보드</p></li>
+          <li class="panel p-3 flex flex-col"><span class="eyebrow">02</span><iconify-icon icon="solar:home-smile-bold-duotone" width="26" class="text-forest my-2"></iconify-icon><h3 class="font-bold text-ink text-sm keep">추천 허브</h3><p class="text-[11px] text-mute mt-0.5 keep">내 공간</p></li>
+          <li class="panel p-3 flex flex-col"><span class="eyebrow">03</span><iconify-icon icon="solar:gallery-add-bold-duotone" width="26" class="text-forest my-2"></iconify-icon><h3 class="font-bold text-ink text-sm keep">공간 등록</h3><p class="text-[11px] text-mute mt-0.5 keep">사진·정보 1/2</p></li>
+          <li class="panel p-3 flex flex-col"><span class="eyebrow">04</span><iconify-icon icon="solar:filter-bold-duotone" width="26" class="text-forest my-2"></iconify-icon><h3 class="font-bold text-ink text-sm keep">조건 입력</h3><p class="text-[11px] text-mute mt-0.5 keep">우리 집 2/2</p></li>
+          <li class="panel p-3 flex flex-col"><span class="eyebrow">05</span><iconify-icon icon="solar:magic-stick-3-bold-duotone" width="26" class="text-forest my-2"></iconify-icon><h3 class="font-bold text-ink text-sm keep">분석</h3><p class="text-[11px] text-mute mt-0.5 keep">추천 매칭</p></li>
+          <li class="panel p-3 flex flex-col"><span class="eyebrow">06</span><iconify-icon icon="solar:leaf-bold-duotone" width="26" class="text-forest my-2"></iconify-icon><h3 class="font-bold text-ink text-sm keep">추천 식물</h3><p class="text-[11px] text-mute mt-0.5 keep">이 공간 추천</p></li>
+          <li class="panel p-3 flex flex-col"><span class="eyebrow">07</span><iconify-icon icon="solar:document-text-bold-duotone" width="26" class="text-forest my-2"></iconify-icon><h3 class="font-bold text-ink text-sm keep">식물 상세</h3><p class="text-[11px] text-mute mt-0.5 keep">공간 선택</p></li>
+          <li class="p-3 flex flex-col rounded-2xl bg-forest text-white shadow-lift"><span class="eyebrow text-sage-soft">08</span><iconify-icon icon="solar:bookmark-bold-duotone" width="26" class="text-sage-soft my-2"></iconify-icon><h3 class="font-bold text-sm keep">배치·저장</h3><p class="text-[11px] text-sage-soft mt-0.5 keep">시안 저장</p></li>
+        </ol>
+        <div class="grid grid-cols-2 gap-5">
+          <div data-r data-d="1" class="rounded-2xl bg-tint border border-sage-soft/60 p-6"><p class="eyebrow text-forest mb-2 flex items-center gap-2"><iconify-icon icon="solar:filter-bold-duotone" width="18"></iconify-icon> 추천 좁히기 · 필터 & 다른 추천</p><p class="text-body keep text-sm">추천 결과는 <b class="text-forest-deep">펫 세이프 · 관리 쉬움 · 저광 OK · 공기 정화</b> 필터로 좁히고, '다른 추천'으로 다시 받을 수 있다.</p></div>
+          <div data-r data-d="2" class="rounded-2xl bg-tint border border-sage-soft/60 p-6"><p class="eyebrow text-forest mb-2 flex items-center gap-2"><iconify-icon icon="solar:square-top-down-bold-duotone" width="18"></iconify-icon> 오버레이로 끊김 없음</p><p class="text-body keep text-sm">식물 상세 · 배치할 공간 선택 · 식물 추가 · 배치 편집 · 시안 비교는 화면 전환 없이 <b class="text-forest-deep">오버레이</b>로 동작하고, 등록한 공간 사진을 배치에 그대로 재사용한다.</p></div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 08 디자인 시스템 — 브랜드 ============ -->
+    <section class="slide bg-paper-2" id="s8" data-title="Brand Identity">
+      <div class="stage">
+      <div class="wrap">
+        <h2 data-r class="text-4xl font-bold tracking-tight text-ink leading-tight keep">브랜드 아이덴티티 · 로고</h2>
+        <p data-r data-d="1" class="mt-3 text-body keep">키워드 <b class="text-ink">Natural · Calm · Warm</b> — '계획(Plan)'과 '결과로 자란 잎(Plant)'을 한 형태에 담는다.</p>
+        <div class="mt-7 grid grid-cols-2 gap-5">
+          <div data-r data-d="1" class="panel p-7">
+            <p class="eyebrow mb-5">Wordmark · 글자 로고</p>
+            <div class="font-extrabold tracking-tight text-ink" style="font-size:64px;">Plan<span class="wm-comma">,</span>t</div>
+            <ul class="mt-5 space-y-2 text-sm text-body">
+              <li class="flex gap-2.5 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-forest flex-none"></iconify-icon> <span><b class="text-ink">Plan</b> + <b class="text-green-mid">,</b> + <b class="text-ink">t</b> = <b class="text-ink">Plant</b></span></li>
+              <li class="flex gap-2.5 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-forest flex-none"></iconify-icon> 쉼표=계획, 잎=결과.</li>
+              <li class="flex gap-2.5 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-forest flex-none"></iconify-icon> 쉼표는 <b class="text-green-mid">Green Mid #6F8565</b>로 강조.</li>
+            </ul>
+          </div>
+          <div data-r data-d="2" class="panel p-7">
+            <p class="eyebrow mb-5">Symbol · 그림 로고 — 잎 2장 + 줄기</p>
+            <div class="flex items-center gap-8">
+              <span class="symbol text-forest" style="font-size:88px;"><span class="lf lf-r"></span><span class="lf lf-l"></span><span class="stem"></span></span>
+              <ul class="space-y-2 text-sm text-body">
+                <li class="flex gap-2.5 keep"><span class="w-3 h-3 rounded-full flex-none mt-1" style="background:var(--forest)"></span> 오른쪽 잎·줄기 = <b class="text-ink">Forest</b></li>
+                <li class="flex gap-2.5 keep"><span class="w-3 h-3 rounded-full flex-none mt-1" style="background:var(--sage)"></span> 왼쪽 잎 = <b class="text-ink">Sage</b></li>
+                <li class="flex gap-2.5 keep"><iconify-icon icon="solar:leaf-bold-duotone" width="16" class="text-forest flex-none mt-0.5"></iconify-icon> 좌우 ±6° 비대칭 — 자연스러운 생명력.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <p data-r class="eyebrow mt-6 mb-3">v10 적용 — 라이트(Paper) 표면만 사용</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div data-r class="rounded-2xl p-6 bg-white border border-hairline flex items-center gap-4">
+            <span class="symbol" style="font-size:26px;"><span class="lf lf-r"></span><span class="lf lf-l"></span><span class="stem"></span></span>
+            <span class="text-2xl font-extrabold" style="color:var(--ink)">Plan<span class="wm-comma">,</span>t</span>
+            <span class="ml-auto text-xs text-mute">앱 내비게이션 락업 · 22–26px</span>
+          </div>
+          <div data-r data-d="1" class="rounded-2xl p-6 bg-white border border-hairline flex items-center gap-4">
+            <span class="font-extrabold tracking-tight" style="color:var(--ink); font-size:40px; line-height:1;">Plan<span class="wm-comma">,</span>t</span>
+            <span class="ml-auto text-xs text-mute">홈 타이틀 · 워드마크 단독</span>
+          </div>
+        </div>
+        <p data-r data-d="2" class="mt-3 text-xs text-mute keep">※ 반전(딥 배경)·세이지 배경 락업은 디자인 시스템에 정의돼 있으나 v10 본문에는 적용되지 않습니다.</p>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 09 컬러 시스템 ============ -->
+    <section class="slide" id="s9" data-title="Color">
+      <div class="stage">
+      <div class="wrap">
+        <h2 data-r class="text-4xl font-bold tracking-tight text-ink leading-tight keep mb-6">컬러 시스템 — 그린 70% · v10 적용 토큰 15</h2>
+        <div class="space-y-4">
+          <!-- 브랜드 그린 -->
+          <div data-r>
+            <p class="eyebrow mb-2.5">브랜드 그린</p>
+            <div class="grid grid-cols-5 gap-3">
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#3A5A40;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Forest</p><p class="text-[11px] text-mute">#3A5A40 · Primary·CTA</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#283D2C;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Forest Deep</p><p class="text-[11px] text-mute">#283D2C · press</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#6F8565;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Green Mid</p><p class="text-[11px] text-mute">#6F8565 · 쉼표</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#A3B18A;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Sage</p><p class="text-[11px] text-mute">#A3B18A · 보조</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#C4CBAE;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Sage Soft</p><p class="text-[11px] text-mute">#C4CBAE · 비활성</p></div></div>
+            </div>
+          </div>
+          <!-- 면 · 라인 -->
+          <div data-r data-d="1">
+            <p class="eyebrow mb-2.5">면 · 라인</p>
+            <div class="grid grid-cols-5 gap-3">
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#FAF9F5;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Paper</p><p class="text-[11px] text-mute">#FAF9F5 · 배경</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#F2EFE8;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Paper-2</p><p class="text-[11px] text-mute">#F2EFE8 · soft·hover</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#E8E3D6;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Strong</p><p class="text-[11px] text-mute">#E8E3D6 · 강한 면</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#E1DCCE;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Line</p><p class="text-[11px] text-mute">#E1DCCE · hairline</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#E8EDE1;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Green Tint</p><p class="text-[11px] text-mute">#E8EDE1 · 선택·활성</p></div></div>
+            </div>
+          </div>
+          <!-- 텍스트 · 상태 -->
+          <div data-r data-d="2">
+            <p class="eyebrow mb-2.5">텍스트 · 상태</p>
+            <div class="grid grid-cols-5 gap-3">
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#2A2E27;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Ink</p><p class="text-[11px] text-mute">#2A2E27 · 제목·본문</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#4A4E43;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Body</p><p class="text-[11px] text-mute">#4A4E43 · 본문</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#6C705F;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Mute</p><p class="text-[11px] text-mute">#6C705F · 보조</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#B7B5A4;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Border</p><p class="text-[11px] text-mute">#B7B5A4 · 비활성 선</p></div></div>
+              <div class="panel p-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg flex-none" style="background:#C13515;box-shadow:inset 0 0 0 1px rgba(40,61,44,.12)"></span><div><p class="text-sm font-semibold text-ink">Error</p><p class="text-[11px] text-mute">#C13515 · 오류·필수</p></div></div>
+            </div>
+          </div>
+        </div>
+        <p data-r data-d="3" class="mt-5 text-sm text-body keep">
+          <b class="text-forest">원칙</b> · 그린 계열을 면적 70%로(Forest를 CTA·활성·배지에 전면) · 콘텐츠 카드=투명, 구조적 면만 White+hairline · 그림자는 포레스트 틴트 · 의미색은 Error만.
+          <span class="text-mute">— Clay·Clay Soft·Mist는 토큰만 정의되고 v10에 적용되지 않아 제외했습니다.</span>
+        </p>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 10 타이포그래피 ============ -->
+    <section class="slide bg-paper-2" id="s10" data-title="Typography">
+      <div class="stage">
+      <div class="wrap">
+        <div class="grid grid-cols-12 gap-10 items-center">
+          <div class="col-span-4">
+            <h2 data-r class="text-4xl font-bold tracking-tight text-ink leading-tight keep">타이포그래피</h2>
+            <div data-r data-d="1" class="mt-6 panel p-6">
+              <p class="text-5xl font-bold text-ink">Aa</p>
+              <p class="mt-3 font-semibold text-ink">Inter · Pretendard</p>
+              <p class="text-sm text-mute mt-1 keep">영문·숫자는 Inter, 한글은 Pretendard. letter-spacing −0.01em, word-break: keep-all.</p>
+            </div>
+          </div>
+          <div class="col-span-8">
+            <p data-r class="eyebrow mb-3">Type Scale</p>
+            <div data-r data-d="1" class="panel overflow-hidden">
+              <div class="flex items-baseline justify-between gap-4 px-5 py-3 border-b border-hairline"><span class="font-bold text-ink" style="font-size:24px">페이지 제목</span><span class="text-xs text-mute" style="font-family:monospace">--fs-h1 · 24px</span></div>
+              <div class="flex items-baseline justify-between gap-4 px-5 py-3 border-b border-hairline"><span class="font-bold text-ink" style="font-size:22px">브랜드 / 로고</span><span class="text-xs text-mute" style="font-family:monospace">brand · 22px</span></div>
+              <div class="flex items-baseline justify-between gap-4 px-5 py-3 border-b border-hairline"><span class="font-bold text-ink" style="font-size:20px">섹션 제목</span><span class="text-xs text-mute" style="font-family:monospace">--fs-h2 · 20px</span></div>
+              <div class="flex items-baseline justify-between gap-4 px-5 py-3 border-b border-hairline"><span class="text-ink" style="font-size:16px">강조 본문 · 큰 버튼</span><span class="text-xs text-mute" style="font-family:monospace">--fs-lg · 16px</span></div>
+              <div class="flex items-baseline justify-between gap-4 px-5 py-3 border-b border-hairline"><span class="text-ink" style="font-size:15px">본문 · 입력 필드</span><span class="text-xs text-mute" style="font-family:monospace">--fs-md · 15px</span></div>
+              <div class="flex items-baseline justify-between gap-4 px-5 py-3 border-b border-hairline"><span class="text-body" style="font-size:14px">기본 보조 본문</span><span class="text-xs text-mute" style="font-family:monospace">--fs-base · 14px</span></div>
+              <div class="flex items-baseline justify-between gap-4 px-5 py-3 border-b border-hairline"><span class="text-body" style="font-size:13px">칩 · 작은 라벨</span><span class="text-xs text-mute" style="font-family:monospace">--fs-sm · 13px</span></div>
+              <div class="flex items-baseline justify-between gap-4 px-5 py-3 border-b border-hairline"><span class="text-mute" style="font-size:12px">보조 캡션</span><span class="text-xs text-mute" style="font-family:monospace">--fs-cap · 12px</span></div>
+              <div class="flex items-baseline justify-between gap-4 px-5 py-3"><span class="text-mute tracking-editorial uppercase" style="font-size:11px">태그 · 뱃지 · Eyebrow</span><span class="text-xs text-mute" style="font-family:monospace">--fs-meta · 11px</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 11 아이콘 시스템 ============ -->
+    <section class="slide" id="s11" data-title="Icon">
+      <div class="stage">
+      <div class="wrap">
+        <div class="grid grid-cols-12 gap-10 items-start">
+          <div class="col-span-4">
+            <h2 data-r class="text-4xl font-bold tracking-tight text-ink leading-tight keep">아이콘 시스템</h2>
+            <p data-r data-d="1" class="mt-5 text-body leading-relaxed keep"><b class="text-ink">Iconify — Solar</b>의 <b class="text-ink">bold-duotone</b> 스타일로 통일. 둥근 형태가 Natural·Calm 톤과 맞고, 듀오톤 면이 Sage와 어울린다.</p>
+            <ul data-r data-d="2" class="mt-5 space-y-2 text-sm text-body">
+              <li class="flex gap-2.5 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-forest flex-none"></iconify-icon> 기본 컬러 Forest, 보조 면은 듀오톤 틴트.</li>
+              <li class="flex gap-2.5 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-forest flex-none"></iconify-icon> 찜(하트)은 형태 통일·색으로 상태 구분.</li>
+            </ul>
+          </div>
+          <div data-r data-d="1" class="col-span-8">
+            <div class="grid grid-cols-5 gap-3">
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:home-smile-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">home</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:gallery-add-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">photo</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:magic-stick-3-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">recommend</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:shield-check-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">safe</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:cat-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">pet</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:sun-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">light</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:waterdrops-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">water</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:leaf-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">plant</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:filter-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">filter</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:gallery-wide-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">simulate</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:heart-bold-duotone" width="28" style="color:var(--border-strong)"></iconify-icon><span class="text-[11px] text-mute">heart·off</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:heart-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">heart·on</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:bookmark-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">save</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:close-circle-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">close</span></div>
+              <div class="panel p-4 flex flex-col items-center gap-1.5"><iconify-icon icon="solar:refresh-bold-duotone" width="28" class="text-forest"></iconify-icon><span class="text-[11px] text-mute">retry</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 12 최종 UI 디자인 (주요 화면 · 반응형) ============ -->
+    <section class="slide" id="s12" data-title="Final UI">
+      <div class="stage">
+      <div class="wrap">
+        <h2 data-r class="text-3xl font-bold tracking-tight text-ink leading-tight keep mb-1">최종 UI 디자인 — 주요 화면</h2>
+        <p data-r class="text-sm text-body mb-4 keep max-w-4xl">실제 서비스 웹의 핵심 화면이에요. 같은 디자인 시스템으로 데스크탑과 모바일에 반응형으로 대응합니다.</p>
+        <div class="grid grid-cols-12 gap-6 items-start">
+          <!-- 데스크탑 주요 화면 -->
+          <div class="col-span-8">
+            <p data-r class="eyebrow mb-2.5">데스크탑 · 핵심 흐름</p>
+            <div data-r data-d="1" class="grid grid-cols-2 gap-4">
+              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-home.png" alt="홈 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">홈</b> <span class="text-mute">· 무드보드 진입</span></figcaption></figure>
+              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-register.png" alt="공간 등록 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">공간 등록</b> <span class="text-mute">· 새 공간 1/2</span></figcaption></figure>
+              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-recommend.png" alt="식물 추천 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">식물 추천</b> <span class="text-mute">· 추천 허브</span></figcaption></figure>
+              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-place.png" alt="배치 편집 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">배치 편집</b> <span class="text-mute">· 사진 위 시안 만들기</span></figcaption></figure>
+            </div>
+          </div>
+          <!-- 모바일 반응형 -->
+          <div class="col-span-4">
+            <p data-r data-d="1" class="eyebrow mb-2.5">모바일 · 반응형</p>
+            <div data-r data-d="2" class="grid grid-cols-2 gap-4">
+              <div><div style="border-radius:24px;padding:7px;background:#11140f;box-shadow:0 18px 40px -22px rgba(0,0,0,.5)"><div style="border-radius:17px;overflow:hidden;background:#fff;aspect-ratio:961/1489"><img src="shots/m-result.png" alt="추천 결과 모바일" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block"></div></div><p class="text-center text-xs text-mute mt-2 keep">추천 결과</p></div>
+              <div><div style="border-radius:24px;padding:7px;background:#11140f;box-shadow:0 18px 40px -22px rgba(0,0,0,.5)"><div style="border-radius:17px;overflow:hidden;background:#fff;aspect-ratio:961/1489"><img src="shots/m-detail.png" alt="식물 상세 모바일" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block"></div></div><p class="text-center text-xs text-mute mt-2 keep">식물 상세</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- ============ 13 웹 프로토타입 시연 (별도 링크) ============ -->
+    <section class="slide bg-forest" id="s13" data-title="Prototype" data-dark>
+      <div class="stage">
+      <iconify-icon icon="solar:leaf-bold-duotone" width="320" class="absolute -right-20 -bottom-16 text-white/5"></iconify-icon>
+      <div class="wrap relative text-paper">
+        <div class="grid grid-cols-12 gap-14 items-center">
+          <!-- 좌: 데스크탑 화면 -->
+          <div data-r data-d="1" class="col-span-6">
+            <figure class="overflow-hidden rounded-2xl shadow-lift" style="background:#fff">
+              <div class="flex items-center gap-1.5 px-4" style="height:32px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:8px;height:8px;border-radius:50%;background:#E06C5E"></span><span style="width:8px;height:8px;border-radius:50%;background:#E8C15A"></span><span style="width:8px;height:8px;border-radius:50%;background:#7FB069"></span><span class="text-[11px] text-mute ml-2" style="font-family:monospace">kimye2121.github.io/planty-app</span></div>
+              <img src="shots/d-home.png" alt="Plan,t 데스크탑 홈 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block">
+            </figure>
+          </div>
+          <!-- 우: 설명 -->
+          <div class="col-span-6">
+            <p data-r class="eyebrow text-sage-soft mb-5">직접 눌러 보는 시제품 · Live Prototype</p>
+            <h2 data-r data-d="1" class="font-extrabold tracking-tight keep" style="font-size:clamp(32px,3.4vw,50px); line-height:1.1;">클릭하며 직접 체험하는<br/>웹 프로토타입</h2>
+            <p data-r data-d="2" class="mt-5 text-paper/85 leading-relaxed keep">공간 등록 → 진단 → 추천(사유 카드) → 배치 시뮬레이션 → 찜·시안 저장까지 실제로 동작합니다. 아래 링크를 새 탭에서 열어 직접 눌러 보세요.</p>
+            <div data-r data-d="2" class="mt-7 flex flex-wrap items-center gap-4">
+              <a href="https://kimye2121.github.io/planty-app/" target="_blank" rel="noopener" class="inline-flex items-center gap-2.5 bg-paper text-forest font-bold px-8 py-4 rounded-xl text-lg hover:bg-white transition shadow-lift"><iconify-icon icon="solar:play-circle-bold-duotone" width="24"></iconify-icon> 프로토타입 새 탭에서 열기</a>
+            </div>
+            <span data-r data-d="2" class="block mt-3 text-sage-soft text-sm" style="font-family:monospace">▸ https://kimye2121.github.io/planty-app/</span>
+            <ul data-r data-d="3" class="mt-8 grid grid-cols-2 gap-x-8 gap-y-3 text-sm text-paper/80">
+              <li class="flex gap-2 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-sage-soft flex-none"></iconify-icon> 방 사진 업로드·샘플 선택</li>
+              <li class="flex gap-2 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-sage-soft flex-none"></iconify-icon> 채광·반려동물·관리 조건 입력</li>
+              <li class="flex gap-2 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-sage-soft flex-none"></iconify-icon> 사유 카드·안전 배지 추천</li>
+              <li class="flex gap-2 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-sage-soft flex-none"></iconify-icon> 사진 위 배치 → 시안 저장</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+  </div>
+
+  <script>
+    // 기본 1920×1080 캔버스를 화면에 맞춰 비율 유지로 축소
+    function fitDeck(){ document.documentElement.style.setProperty('--fit', Math.min(window.innerWidth/1920, window.innerHeight/1080)); }
+    fitDeck(); window.addEventListener('resize', fitDeck);
+
+    const deck = document.getElementById('deck');
+    const slides = [...deck.querySelectorAll('.slide')];
+    const dotsWrap = document.getElementById('dots');
+    const cNow = document.getElementById('cNow');
+    let cur = 0;
+
+    // build dots
+    slides.forEach((s,i)=>{
+      const b=document.createElement('button'); b.title=s.dataset.title||('Slide '+i);
+      b.addEventListener('click',()=>slides[i].scrollIntoView());
+      dotsWrap.appendChild(b);
+    });
+    const dotBtns=[...dotsWrap.children];
+
+    function setActive(i){
+      cur=i;
+      slides.forEach((s,n)=>s.classList.toggle('active', n===i));
+      dotBtns.forEach((d,n)=>d.classList.toggle('on', n===i));
+      cNow.textContent=String(i+1).padStart(2,'0');
+      const dark = slides[i].hasAttribute('data-dark');
+      dotsWrap.classList.toggle('on-dark', dark);
+      cNow.parentElement.style.color = dark ? 'rgba(255,255,255,.7)' : '';
+      cNow.style.color = dark ? '#fff' : '';
+      document.getElementById('brandbar').style.color = dark ? '#FAF9F5' : 'var(--ink)';
+      document.getElementById('brandSym').classList.toggle('rev', dark);
+    }
+
+    const io = new IntersectionObserver((es)=>{
+      es.forEach(e=>{ if(e.isIntersecting){ setActive(slides.indexOf(e.target)); } });
+    }, { root:deck, threshold:0.55 });
+    slides.forEach(s=>io.observe(s));
+
+    const go=(d)=>{ const n=Math.max(0,Math.min(slides.length-1,cur+d)); slides[n].scrollIntoView(); };
+    window.addEventListener('keydown',(e)=>{
+      if(['ArrowDown','ArrowRight','PageDown',' '].includes(e.key)){ e.preventDefault(); go(1); }
+      if(['ArrowUp','ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); go(-1); }
+    });
+    setActive(0);
+
+    // 반응형 데모 — 핸들을 끌어 가로 폭 직접 조절 + px 실시간 표시
+    (function(){
+      var w=document.getElementById('rzwrap'), h=document.getElementById('rzhandle'),
+          lbl=document.getElementById('rzw'), shield=document.getElementById('rzshield');
+      if(!w||!h) return;
+      var drag=false;
+      function setW(px){ var max=(w.parentElement?w.parentElement.clientWidth:px); px=Math.max(340, Math.min(px, max)); w.style.width=px+'px'; if(lbl) lbl.textContent=Math.round(px)+' px'; }
+      function move(x){ var fit=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fit'))||1; setW((x - w.getBoundingClientRect().left)/fit); }
+      h.addEventListener('mousedown', function(e){ e.preventDefault(); drag=true; if(shield) shield.classList.add('on'); });
+      window.addEventListener('mousemove', function(e){ if(drag) move(e.clientX); });
+      window.addEventListener('mouseup', function(){ if(drag){ drag=false; if(shield) shield.classList.remove('on'); } });
+      h.addEventListener('touchstart', function(){ drag=true; }, {passive:true});
+      window.addEventListener('touchmove', function(e){ if(drag) move(e.touches[0].clientX); }, {passive:true});
+      window.addEventListener('touchend', function(){ drag=false; });
+      if(lbl) lbl.textContent = Math.round(w.clientWidth)+' px';
+    })();
+  </script>
+</body>
+</html>
