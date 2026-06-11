@@ -585,7 +585,37 @@
     </div>
     </section>
 
-<!-- ============ 13 웹 프로토타입 시연 (별도 링크) ============ -->
+<!-- ============ 12 최종 UI 디자인 (주요 화면 · 반응형) ============ -->
+    <section class="slide" id="s12" data-title="Final UI">
+      <div class="stage">
+      <div class="wrap">
+        <h2 data-r class="text-3xl font-bold tracking-tight text-ink leading-tight keep mb-1">최종 UI 디자인 — 주요 화면</h2>
+        <p data-r class="text-sm text-body mb-4 keep max-w-4xl">실제 서비스 웹의 핵심 화면이다. 같은 디자인 시스템으로 데스크탑과 모바일에 반응형으로 대응한다.</p>
+        <div class="grid grid-cols-12 gap-6 items-start">
+          <!-- 데스크탑 주요 화면 -->
+          <div class="col-span-8">
+            <p data-r class="eyebrow mb-2.5">데스크탑 · 핵심 흐름</p>
+            <div data-r data-d="1" class="grid grid-cols-2 gap-4">
+              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-home.png" alt="홈 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">홈</b> <span class="text-mute">· 무드보드 진입</span></figcaption></figure>
+              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-register.png" alt="공간 등록 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">공간 등록</b> <span class="text-mute">· 새 공간 1/2</span></figcaption></figure>
+              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-recommend.png" alt="식물 추천 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">식물 추천</b> <span class="text-mute">· 추천 허브</span></figcaption></figure>
+              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-place.png" alt="배치 편집 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">배치 편집</b> <span class="text-mute">· 사진 위 시안 만들기</span></figcaption></figure>
+            </div>
+          </div>
+          <!-- 모바일 반응형 -->
+          <div class="col-span-4">
+            <p data-r data-d="1" class="eyebrow mb-2.5">모바일 · 반응형</p>
+            <div data-r data-d="2" class="grid grid-cols-2 gap-4">
+              <div><div style="border-radius:24px;padding:7px;background:#11140f;box-shadow:0 18px 40px -22px rgba(0,0,0,.5)"><div style="border-radius:17px;overflow:hidden;background:#fff;aspect-ratio:961/1489"><img src="shots/m-result.png" alt="추천 결과 모바일" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block"></div></div><p class="text-center text-xs text-mute mt-2 keep">추천 결과</p></div>
+              <div><div style="border-radius:24px;padding:7px;background:#11140f;box-shadow:0 18px 40px -22px rgba(0,0,0,.5)"><div style="border-radius:17px;overflow:hidden;background:#fff;aspect-ratio:961/1489"><img src="shots/m-detail.png" alt="식물 상세 모바일" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block"></div></div><p class="text-center text-xs text-mute mt-2 keep">식물 상세</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+        <!-- ============ 13 웹 프로토타입 시연 (별도 링크) ============ -->
     <section class="slide bg-forest" id="s13" data-title="Prototype" data-dark>
       <div class="stage">
       <iconify-icon icon="solar:leaf-bold-duotone" width="320" class="absolute -right-20 -bottom-16 text-white/5"></iconify-icon>
@@ -614,36 +644,6 @@
               <li class="flex gap-2 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-sage-soft flex-none"></iconify-icon> 사유 카드·안전 배지 추천</li>
               <li class="flex gap-2 keep"><iconify-icon icon="solar:check-circle-bold-duotone" width="18" class="text-sage-soft flex-none"></iconify-icon> 사진 위 배치 → 시안 저장</li>
             </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-    </section>
-
-        <!-- ============ 12 최종 UI 디자인 (주요 화면 · 반응형) ============ -->
-    <section class="slide" id="s12" data-title="Final UI">
-      <div class="stage">
-      <div class="wrap">
-        <h2 data-r class="text-3xl font-bold tracking-tight text-ink leading-tight keep mb-1">최종 UI 디자인 — 주요 화면</h2>
-        <p data-r class="text-sm text-body mb-4 keep max-w-4xl">실제 서비스 웹의 핵심 화면이다. 같은 디자인 시스템으로 데스크탑과 모바일에 반응형으로 대응한다.</p>
-        <div class="grid grid-cols-12 gap-6 items-start">
-          <!-- 데스크탑 주요 화면 -->
-          <div class="col-span-8">
-            <p data-r class="eyebrow mb-2.5">데스크탑 · 핵심 흐름</p>
-            <div data-r data-d="1" class="grid grid-cols-2 gap-4">
-              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-home.png" alt="홈 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">홈</b> <span class="text-mute">· 무드보드 진입</span></figcaption></figure>
-              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-register.png" alt="공간 등록 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">공간 등록</b> <span class="text-mute">· 새 공간 1/2</span></figcaption></figure>
-              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-recommend.png" alt="식물 추천 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">식물 추천</b> <span class="text-mute">· 추천 허브</span></figcaption></figure>
-              <figure class="panel overflow-hidden"><div class="flex items-center gap-1.5 px-3" style="height:24px;background:var(--paper-2);border-bottom:1px solid var(--hairline)"><span style="width:7px;height:7px;border-radius:50%;background:#E06C5E"></span><span style="width:7px;height:7px;border-radius:50%;background:#E8C15A"></span><span style="width:7px;height:7px;border-radius:50%;background:#7FB069"></span></div><img src="shots/d-place.png" alt="배치 편집 화면" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block"><figcaption class="px-3 py-2 text-xs keep"><b class="text-ink">배치 편집</b> <span class="text-mute">· 사진 위 시안 만들기</span></figcaption></figure>
-            </div>
-          </div>
-          <!-- 모바일 반응형 -->
-          <div class="col-span-4">
-            <p data-r data-d="1" class="eyebrow mb-2.5">모바일 · 반응형</p>
-            <div data-r data-d="2" class="grid grid-cols-2 gap-4">
-              <div><div style="border-radius:24px;padding:7px;background:#11140f;box-shadow:0 18px 40px -22px rgba(0,0,0,.5)"><div style="border-radius:17px;overflow:hidden;background:#fff;aspect-ratio:961/1489"><img src="shots/m-result.png" alt="추천 결과 모바일" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block"></div></div><p class="text-center text-xs text-mute mt-2 keep">추천 결과</p></div>
-              <div><div style="border-radius:24px;padding:7px;background:#11140f;box-shadow:0 18px 40px -22px rgba(0,0,0,.5)"><div style="border-radius:17px;overflow:hidden;background:#fff;aspect-ratio:961/1489"><img src="shots/m-detail.png" alt="식물 상세 모바일" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block"></div></div><p class="text-center text-xs text-mute mt-2 keep">식물 상세</p></div>
-            </div>
           </div>
         </div>
       </div>
